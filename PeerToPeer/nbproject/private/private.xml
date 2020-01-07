@@ -3,11 +3,9 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/root/NetBeansProjects/PeerToPeer/src/peertopeer/Peer.java</file>
-            <file>file:/root/NetBeansProjects/PeerToPeer/src/peertopeer/PeerThread.java</file>
-            <file>file:/root/NetBeansProjects/PeerToPeer/src/peertopeer/ServerThread.java</file>
-            <file>file:/root/NetBeansProjects/PeerToPeer/src/peertopeer/ServerThreadThreads.java</file>
-            <file>file:/root/NetBeansProjects/PeerToPeer/src/peertopeer/Chave.java</file>
+            <file>file:/root/NetBeansProjects/PBL2-Redes/PeerToPeer/src/desenhos/PainelDesenho.java</file>
+            <file>file:/root/NetBeansProjects/PBL2-Redes/PeerToPeer/src/desenhos/Carro2D.java</file>
+            <file>file:/root/NetBeansProjects/PBL2-Redes/PeerToPeer/src/desenhos/Principal.java</file>
         </group>
     </open-files>
 </project-private>
