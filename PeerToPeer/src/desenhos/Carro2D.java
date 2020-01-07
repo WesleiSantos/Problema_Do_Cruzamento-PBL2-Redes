@@ -13,6 +13,7 @@ import java.awt.Point;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
@@ -49,20 +50,16 @@ public class Carro2D {
         Line2D.Double c1 = new Line2D.Double(capo1, capo2);
         Line2D.Double c2 = new Line2D.Double(capo2, capo3);
         Line2D.Double c3 = new Line2D.Double(capo3, capo4);
- 
+
         g2.draw(corpo);
         g2.draw(rodaFrente);
         g2.draw(rodaTras);
         g2.draw(parachoqueFrente);
         g2.draw(parachoqueTras);
+
         g2.draw(c1);
         g2.draw(c2);
         g2.draw(c3);
-      
-
-        AffineTransform old = g2.getTransform();
-        g2.rotate(Math.toRadians(45));
-        g2.setTransform(old);
     }
 
     /**
@@ -70,17 +67,44 @@ public class Carro2D {
      * @param g Graphics
      * @param ineX incrementa em x para mover horizontalmente
      * @param maxX mantém dentro da tela
+     * @param angulo
      */
-    public void move(Graphics g, int ineX, int maxX) {
+    public void move(Graphics g, int ineX, int maxX, int angulo, String posicaoInicio, String posicaoFinal) {
         Graphics2D g2 = (Graphics2D) g;
         g2.setColor(Color.black);
         g2.setStroke(new BasicStroke());
+        g2.rotate(Math.toRadians(angulo), posicao.x, posicao.y);
         draw(g2);
+        if (posicaoInicio.equalsIgnoreCase("NORTE")) {
+             posicao.y = (posicao.y + ineX) % maxX;
+        } else if (posicaoInicio.equalsIgnoreCase("SUL")) {
+            posicao.y = (posicao.y - ineX) % maxX;
+        } else if (posicaoInicio.equalsIgnoreCase("LESTE")) {
+            posicao.x = (posicao.x + ineX) % maxX;
+        } else if (posicaoInicio.equalsIgnoreCase("OESTE")) {
+            posicao.x = (posicao.x - ineX) % maxX;
+        } else if (posicaoFinal.equalsIgnoreCase("NORTE")) {
+            
+            posicao.y = (posicao.y - ineX) % maxX;
+        } else if (posicaoFinal.equalsIgnoreCase("SUL")) {
+            
+            posicao.y = (posicao.y + ineX) % maxX;
+        } else if (posicaoFinal.equalsIgnoreCase("LESTE")) {
+            
+             posicao.x = (posicao.x - ineX) % maxX;
+        } else if (posicaoFinal.equalsIgnoreCase("OESTE")) {
+            
+            posicao.x = (posicao.x + ineX) % maxX;
+        }
 
-        posicao.x = (posicao.x + ineX) % maxX;
+       
         g.setColor(Color.black);
     }
 
+    /*private void rotaciona(Graphics g, int angulo, int posicaoX, int posicaoY){
+        Graphics2D g2 = (Graphics2D) g;
+        g2.rotate(Math.toRadians(90), posicao.x,posicao.y );
+    }*/
     public Point getPosicao() {
         return posicao;
     }
