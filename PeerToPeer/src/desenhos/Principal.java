@@ -178,13 +178,11 @@ public class Principal{
     
     private void jButton1ActionPerformed(ActionEvent evt) {                                         
         // TODO add your handling code here:
-        
         System.out.println(evt.getActionCommand());
         int index =jComboBox1.getSelectedIndex();
         String posicaoOrigem = jComboBox1.getItemAt(index);
         index = jComboBox2.getSelectedIndex();
         String posicaoFim = jComboBox2.getItemAt(index);
-        
         if(evt.getActionCommand().equalsIgnoreCase("OK")){
             painelDesenho.setTimerRodando(true);
             painelDesenho.setPosicaoOrigem(posicaoOrigem);
