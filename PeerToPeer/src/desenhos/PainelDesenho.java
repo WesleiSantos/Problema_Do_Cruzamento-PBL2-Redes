@@ -7,11 +7,11 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.NoninvertibleTransformException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.io.IOException;
 import javax.swing.JComponent;
 import javax.swing.Timer;
+import peertopeer.Peer;
+import peertopeer.ServerThread;
 
 /**
  *
@@ -30,21 +30,31 @@ public class PainelDesenho extends JComponent implements ActionListener {
     private Timer t;
     private Timer timer;
     private boolean controleConometro = false;
+    private boolean mudarPosicao = false;
+    private boolean flag = false;
+    private ServerThread server;
+    private String username;
     private int currentSegundo = 0;
     private int velocidade = 1000;
     private boolean timerRodando = false;
     private String posicaoOrigem;
     private String posicaoFim;
 
-    public PainelDesenho() {
+    public PainelDesenho(String nome, String porta) throws IOException {
         posicaoLeste = new Point(100, 360);
         posicaoOeste = new Point(735, 310);
         posicaoNorte = new Point(435, 0);
         posicaoSul = new Point(490, 625);
-
         this.cruzamento = new Cruzamento(posicaoX, posicaoY);
-        t = new Timer(50, this);
+        this.carroSimples = new Carro2D(0,0, porta, nome);
+        t = new Timer(10, this);
     }
+
+    public void conectaOutroCarro(String ip, String porta) throws Exception{
+        carroSimples.updateListenToPeers(ip, porta);
+    }
+
+    
 
     private void iniciarContagem() {
         ActionListener action = new ActionListener() {
@@ -52,7 +62,7 @@ public class PainelDesenho extends JComponent implements ActionListener {
                 if (controleConometro) {
                     currentSegundo++;
                     String seg = currentSegundo <= 9 ? "0" + currentSegundo : currentSegundo + "";
-                    // System.out.println("00" + ":" + "00" + ":" + seg);
+                    System.out.println("00" + ":" + "00" + ":" + seg);
                 }
             }
         };
@@ -84,60 +94,81 @@ public class PainelDesenho extends JComponent implements ActionListener {
         int incremento = 1;
         cruzamento.draw(g);
         if (timerRodando) {
+            t.start();
+            iniciarContagem();
+
             if (posicaoOrigem.equalsIgnoreCase("NORTE")) {
-                if (carroSimples == null) {
-                    carroSimples = new Carro2D(posicaoNorte.x, posicaoNorte.y);
+                if (flag || carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight()))) {
+                    carroSimples.setPosicao(this.posicaoNorte.getLocation());
+                    mudarPosicao = false;
+                    flag=false;
                 }
-                t.start();
-                iniciarContagem();
-                if (currentSegundo > 14) {
-                    switch (posicaoFim) {
-                        case "NORTE": {
-                           
-                        }
-                        case "SUL": {
-
-                        }
-                        case "LESTE": {
-                            rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
-                        }
-                        case "OESTE": {
-
-                        }
-                    }
-                }else{
+                if (!mudarPosicao) {
                     rodarCarro(g, incremento, 90, "SUL", currentSegundo);
                 }
+                if (posicaoFim.equalsIgnoreCase("LESTE") && carroSimples.getPosicao().y > 310) {
+                    rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
+                    mudarPosicao = true;
+                } else if (posicaoFim.equalsIgnoreCase("OESTE") && carroSimples.getPosicao().y > 355) {
+                    rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
+                    mudarPosicao = true;
+                }
             } else if (posicaoOrigem.equalsIgnoreCase("SUL")) {
-                if (carroSimples == null) {
-                    carroSimples = new Carro2D(posicaoSul.x, posicaoSul.y);
+                if (flag || carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight() + 50))) {
+                    carroSimples.setPosicao(this.posicaoSul.getLocation());
+                    mudarPosicao = false;
+                    flag=false;
                 }
-                t.start();
-                iniciarContagem();
-                rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
+                if (!mudarPosicao) {
+                    rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
+                }
+                if (posicaoFim.equalsIgnoreCase("LESTE") && carroSimples.getPosicao().y < 310) {
+                    rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
+                    mudarPosicao = true;
+                } else if (posicaoFim.equalsIgnoreCase("OESTE") && carroSimples.getPosicao().y < 355) {
+                    rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
+                    mudarPosicao = true;
+                }
             } else if (posicaoOrigem.equalsIgnoreCase("LESTE")) {
-                if (carroSimples == null) {
-                    carroSimples = new Carro2D(posicaoLeste.x, posicaoLeste.y);
+                if (flag ||  carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight() + 50))) {
+                    carroSimples.setPosicao(this.posicaoLeste.getLocation());
+                    mudarPosicao = false;
+                    flag=false;
                 }
-                t.start();
-                iniciarContagem();
-                rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
+                if (!mudarPosicao) {
+                    rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
+                }
+                if (posicaoFim.equalsIgnoreCase("NORTE") && carroSimples.getPosicao().x > 480) {
+                    rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
+                    mudarPosicao = true;
+                } else if (posicaoFim.equalsIgnoreCase("SUL") && carroSimples.getPosicao().x > 430) {
+                    rodarCarro(g, incremento, 90, "SUL", currentSegundo);
+                    mudarPosicao = true;
+                }
             } else if (posicaoOrigem.equalsIgnoreCase("OESTE")) {
-                if (carroSimples == null) {
-                    carroSimples = new Carro2D(posicaoOeste.x, posicaoOeste.y);
+                if (flag ||  carroSimples.excedeuAreaDaTela(new Point(getWidth()+70, getHeight()))) {
+                    carroSimples.setPosicao(this.posicaoOeste.getLocation());
+                    mudarPosicao = false;
+                    flag=false;
                 }
-                t.start();
-                iniciarContagem();
-                rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
+                if (!mudarPosicao) {
+                    rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
+                }
+
+                if (posicaoFim.equalsIgnoreCase("NORTE") && carroSimples.getPosicao().x < 490) {
+                    rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
+                    mudarPosicao = true;
+                } else if (posicaoFim.equalsIgnoreCase("SUL") && carroSimples.getPosicao().x < 435) {
+                    rodarCarro(g, incremento, 90, "SUL", currentSegundo);
+                    mudarPosicao = true;
+                }
             }
         } else {
             t.stop();
-            if (timer != null) {
+            flag=true;
+            if (flag) {
                 stopTime();
             }
-            timer = null;
-            carroSimples = null;
-            incremento = 1;
         }
     }
 
@@ -152,6 +183,10 @@ public class PainelDesenho extends JComponent implements ActionListener {
 
     public void setTimerRodando(boolean timerRodando) {
         this.timerRodando = timerRodando;
+    }
+
+    public void setMudarPosicao(boolean mudarPosicao) {
+        this.mudarPosicao = mudarPosicao;
     }
 
     public String getPosicaoOrigem() {

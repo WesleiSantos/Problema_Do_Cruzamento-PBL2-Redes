@@ -28,7 +28,7 @@ public class ServerThreadThreads extends Thread {
     public void run() {
         try {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-            this.printWriter = new PrintWriter(socket.getOutputStream(), true);
+            this.printWriter = new PrintWriter(socket.getOutputStream());
             while(true) serverThread.sendMessage(bufferedReader.readLine());
 
         } catch (Exception e) {
