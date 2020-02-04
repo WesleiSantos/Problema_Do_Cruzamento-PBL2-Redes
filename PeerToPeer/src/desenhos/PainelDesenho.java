@@ -8,9 +8,15 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.JComponent;
 import javax.swing.Timer;
 import peertopeer.Peer;
+import peertopeer.PeerThread;
 import peertopeer.ServerThread;
 
 /**
@@ -20,6 +26,7 @@ import peertopeer.ServerThread;
 public class PainelDesenho extends JComponent implements ActionListener {
 
     private Carro2D carroSimples;
+    private Set<Carro2D> carros = new HashSet<Carro2D>();
     private Cruzamento cruzamento;
     private int posicaoX = 0;
     private int posicaoY = 100;
@@ -28,12 +35,9 @@ public class PainelDesenho extends JComponent implements ActionListener {
     private Point posicaoLeste;
     private Point posicaoOeste;
     private Timer t;
-    private Timer timer;
     private boolean controleConometro = false;
     private boolean mudarPosicao = false;
     private boolean flag = false;
-    private ServerThread server;
-    private String username;
     private int currentSegundo = 0;
     private int velocidade = 1000;
     private boolean timerRodando = false;
@@ -46,42 +50,23 @@ public class PainelDesenho extends JComponent implements ActionListener {
         posicaoNorte = new Point(435, 0);
         posicaoSul = new Point(490, 625);
         this.cruzamento = new Cruzamento(posicaoX, posicaoY);
-        this.carroSimples = new Carro2D(0,0, porta, nome);
+        this.carroSimples = new Carro2D(0, 0, "NORTE", "LESTE");
+        this.carroSimples.instanciaServer(porta, nome);
         t = new Timer(10, this);
     }
 
-    public void conectaOutroCarro(String ip, String porta) throws Exception{
-        carroSimples.updateListenToPeers(ip, porta);
-    }
-
-    
-
-    private void iniciarContagem() {
-        ActionListener action = new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (controleConometro) {
-                    currentSegundo++;
-                    String seg = currentSegundo <= 9 ? "0" + currentSegundo : currentSegundo + "";
-                    System.out.println("00" + ":" + "00" + ":" + seg);
+    public void conectaOutroCarro(String dados) throws Exception {
+        carroSimples.updateListenToPeers(dados);
+        if (!carroSimples.getCarrosRodando().isEmpty()) {
+            for (PeerThread peer : this.carroSimples.getCarrosRodando()) {
+                if (!peer.getJsonObject().isEmpty()) {
+                    String origem = peer.getJsonObject().get("posicaoInicial").toString();
+                    String fim = peer.getJsonObject().get("posicaoFinal").toString();
+                    Carro2D carro = new Carro2D(0, 0, origem, fim);
+                    carros.add(carro);
                 }
             }
-        };
-        if (!controleConometro) {
-            controleConometro = true;
-            this.timer = new Timer(velocidade, action);
-            this.timer.start();
         }
-
-    }
-
-    private void stopTime() {
-        if (controleConometro) {
-            controleConometro = false;
-            timer.stop();
-            currentSegundo = 0;
-            System.out.println("00:00:00");
-        }
-
     }
 
     /**
@@ -91,83 +76,87 @@ public class PainelDesenho extends JComponent implements ActionListener {
      */
     @Override
     public void paintComponent(Graphics g) {
-        int incremento = 1;
         cruzamento.draw(g);
         if (timerRodando) {
             t.start();
-            iniciarContagem();
 
-            if (posicaoOrigem.equalsIgnoreCase("NORTE")) {
-                if (flag || carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight()))) {
-                    carroSimples.setPosicao(this.posicaoNorte.getLocation());
-                    mudarPosicao = false;
-                    flag=false;
-                }
-                if (!mudarPosicao) {
-                    rodarCarro(g, incremento, 90, "SUL", currentSegundo);
-                }
-                if (posicaoFim.equalsIgnoreCase("LESTE") && carroSimples.getPosicao().y > 310) {
-                    rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
-                    mudarPosicao = true;
-                } else if (posicaoFim.equalsIgnoreCase("OESTE") && carroSimples.getPosicao().y > 355) {
-                    rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
-                    mudarPosicao = true;
-                }
-            } else if (posicaoOrigem.equalsIgnoreCase("SUL")) {
-                if (flag || carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight() + 50))) {
-                    carroSimples.setPosicao(this.posicaoSul.getLocation());
-                    mudarPosicao = false;
-                    flag=false;
-                }
-                if (!mudarPosicao) {
-                    rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
-                }
-                if (posicaoFim.equalsIgnoreCase("LESTE") && carroSimples.getPosicao().y < 310) {
-                    rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
-                    mudarPosicao = true;
-                } else if (posicaoFim.equalsIgnoreCase("OESTE") && carroSimples.getPosicao().y < 355) {
-                    rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
-                    mudarPosicao = true;
-                }
-            } else if (posicaoOrigem.equalsIgnoreCase("LESTE")) {
-                if (flag ||  carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight() + 50))) {
-                    carroSimples.setPosicao(this.posicaoLeste.getLocation());
-                    mudarPosicao = false;
-                    flag=false;
-                }
-                if (!mudarPosicao) {
-                    rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
-                }
-                if (posicaoFim.equalsIgnoreCase("NORTE") && carroSimples.getPosicao().x > 480) {
-                    rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
-                    mudarPosicao = true;
-                } else if (posicaoFim.equalsIgnoreCase("SUL") && carroSimples.getPosicao().x > 430) {
-                    rodarCarro(g, incremento, 90, "SUL", currentSegundo);
-                    mudarPosicao = true;
-                }
-            } else if (posicaoOrigem.equalsIgnoreCase("OESTE")) {
-                if (flag ||  carroSimples.excedeuAreaDaTela(new Point(getWidth()+70, getHeight()))) {
-                    carroSimples.setPosicao(this.posicaoOeste.getLocation());
-                    mudarPosicao = false;
-                    flag=false;
-                }
-                if (!mudarPosicao) {
-                    rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
-                }
-
-                if (posicaoFim.equalsIgnoreCase("NORTE") && carroSimples.getPosicao().x < 490) {
-                    rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
-                    mudarPosicao = true;
-                } else if (posicaoFim.equalsIgnoreCase("SUL") && carroSimples.getPosicao().x < 435) {
-                    rodarCarro(g, incremento, 90, "SUL", currentSegundo);
-                    mudarPosicao = true;
-                }
-            }
+            this.carroSimples.paintComponent(g);
         } else {
             t.stop();
-            flag=true;
+            flag = true;
             if (flag) {
-                stopTime();
+                //stopTime();
+            }
+        }
+
+    }
+
+    private void desenhaCarro(Graphics g, String posicaoOrigem, String posicaoFim, int incremento) {
+
+        if (posicaoOrigem.equalsIgnoreCase("NORTE")) {
+            if (flag || carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight()))) {
+                carroSimples.setPosicao(this.posicaoNorte.getLocation());
+                mudarPosicao = false;
+                flag = false;
+            }
+            if (!mudarPosicao) {
+                rodarCarro(g, incremento, 90, "SUL", currentSegundo);
+            }
+            if (posicaoFim.equalsIgnoreCase("LESTE") && carroSimples.getPosicao().y > 310) {
+                rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
+                mudarPosicao = true;
+            } else if (posicaoFim.equalsIgnoreCase("OESTE") && carroSimples.getPosicao().y > 355) {
+                rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
+                mudarPosicao = true;
+            }
+        } else if (posicaoOrigem.equalsIgnoreCase("SUL")) {
+            if (flag || carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight() + 50))) {
+                carroSimples.setPosicao(this.posicaoSul.getLocation());
+                mudarPosicao = false;
+                flag = false;
+            }
+            if (!mudarPosicao) {
+                rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
+            }
+            if (posicaoFim.equalsIgnoreCase("LESTE") && carroSimples.getPosicao().y < 310) {
+                rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
+                mudarPosicao = true;
+            } else if (posicaoFim.equalsIgnoreCase("OESTE") && carroSimples.getPosicao().y < 355) {
+                rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
+                mudarPosicao = true;
+            }
+        } else if (posicaoOrigem.equalsIgnoreCase("LESTE")) {
+            if (flag || carroSimples.excedeuAreaDaTela(new Point(getWidth(), getHeight() + 50))) {
+                carroSimples.setPosicao(this.posicaoLeste.getLocation());
+                mudarPosicao = false;
+                flag = false;
+            }
+            if (!mudarPosicao) {
+                rodarCarro(g, incremento, 0, "OESTE", currentSegundo);
+            }
+            if (posicaoFim.equalsIgnoreCase("NORTE") && carroSimples.getPosicao().x > 480) {
+                rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
+                mudarPosicao = true;
+            } else if (posicaoFim.equalsIgnoreCase("SUL") && carroSimples.getPosicao().x > 430) {
+                rodarCarro(g, incremento, 90, "SUL", currentSegundo);
+                mudarPosicao = true;
+            }
+        } else if (posicaoOrigem.equalsIgnoreCase("OESTE")) {
+            if (flag || carroSimples.excedeuAreaDaTela(new Point(getWidth() + 70, getHeight()))) {
+                carroSimples.setPosicao(this.posicaoOeste.getLocation());
+                mudarPosicao = false;
+                flag = false;
+            }
+            if (!mudarPosicao) {
+                rodarCarro(g, incremento, 0, "LESTE", currentSegundo);
+            }
+
+            if (posicaoFim.equalsIgnoreCase("NORTE") && carroSimples.getPosicao().x < 490) {
+                rodarCarro(g, incremento, 90, "NORTE", currentSegundo);
+                mudarPosicao = true;
+            } else if (posicaoFim.equalsIgnoreCase("SUL") && carroSimples.getPosicao().x < 435) {
+                rodarCarro(g, incremento, 90, "SUL", currentSegundo);
+                mudarPosicao = true;
             }
         }
     }

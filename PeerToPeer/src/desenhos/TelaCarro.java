@@ -12,10 +12,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BoxLayout;
@@ -28,18 +24,14 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import peertopeer.Peer;
-import peertopeer.ServerThread;
 
 /**
  *
  * @author root
  */
-public class Principal {
-
-    private final int width = 1000;
-    private final int height = 900;
-    private PainelDesenho painelDesenho;
+public class TelaCarro {
+     private final int width = 400;
+    private final int height = 400;
     private JFrame tela;
     private JButton jButton1;
     private JButton jButton2;
@@ -51,7 +43,7 @@ public class Principal {
     private JTextField jTextField2;
     Container panelOpicoes;
 
-    public Principal() throws Exception {
+    public TelaCarro() throws Exception {
         inicializeComponentes();
     }
 
@@ -70,7 +62,6 @@ public class Principal {
         panelOpicoes = new JPanel();
         String nomePorta = JOptionPane.showInputDialog("Insira o nome e porta do carro separados por espaço(nome porta)", "weslei 3001");
         String[] result = nomePorta.split(" ");
-        painelDesenho = new PainelDesenho(result[0], result[1]);
         tela.setSize(width, height);
         tela.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         tela.setTitle("Carros");
@@ -151,9 +142,8 @@ public class Principal {
 
         //adiciona componentes a painel secundario
         tela.setContentPane(panelSec);
-        panelSec.add(BorderLayout.CENTER, painelDesenho);
         panelSec.setBackground(java.awt.Color.white);
-        panelSec.add(BorderLayout.EAST, panelOpicoes);
+        panelSec.add(panelOpicoes);
 
         /**
          * cria painel de desenho
@@ -162,8 +152,9 @@ public class Principal {
         tela.setVisible(true);
 
     }
-
-    private void jComboBox1ActionPerformed(ActionEvent evt) {
+    
+    
+     private void jComboBox1ActionPerformed(ActionEvent evt) {
         // TODO add your handling code here:
 
     }
@@ -177,15 +168,9 @@ public class Principal {
         String posicaoFim = jComboBox2.getItemAt(index);
         if (evt.getActionCommand().equalsIgnoreCase("OK")) {
             String dados = jTextField1.getText();
-            painelDesenho.setPosicaoOrigem(posicaoOrigem);
-            painelDesenho.setPosicaoFim(posicaoFim);
-            painelDesenho.setTimerRodando(true);
-            painelDesenho.conectaOutroCarro(dados);
-            painelDesenho.repaint();
+          
         } else if (evt.getActionCommand().equalsIgnoreCase("Cancelar")) {
-            painelDesenho.setTimerRodando(false);
-            painelDesenho.setMudarPosicao(false);
-            painelDesenho.repaint();
+           
         }
     }
 
@@ -216,9 +201,8 @@ public class Principal {
         panelOpicoes.add(componente, ItemGrade);
 
     }
-
+    
     public static void main(String[] args) throws IOException, Exception {
-        new Principal();
-
+        new TelaCarro();
     }
 }
